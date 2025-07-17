@@ -1,12 +1,11 @@
-// api/perguntar.js
-import fetch from 'node-fetch';
+const fetch = require('node-fetch');
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   if (req.method !== 'POST') {
     return res.status(405).json({ erro: "Método não permitido" });
   }
 
-  const { pergunta } = req.body;
+  const pergunta = req.body.pergunta;
   const GPT_API_KEY = process.env.GPT_API_KEY;
   const GPT_ASSISTANT_ID = process.env.GPT_ASSISTANT_ID;
 
@@ -73,4 +72,4 @@ export default async function handler(req, res) {
     console.error("Erro:", e);
     res.status(500).json({ erro: "Erro interno no servidor." });
   }
-}
+};
