@@ -75,10 +75,10 @@
 
   <script>
     async function enviarPergunta() {
-      const pergunta = document.getElementById("pergunta").value;
+      const pergunta = document.getElementById("pergunta").value.trim();
       const respostaDiv = document.getElementById("resposta");
 
-      if (!pergunta.trim()) {
+      if (!pergunta) {
         respostaDiv.textContent = "Por favor, escreva uma pergunta.";
         return;
       }
@@ -89,14 +89,20 @@
         const resposta = await fetch("/api/perguntar", {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type": "application/json"
           },
           body: JSON.stringify({ pergunta })
         });
 
+        if (!resposta.ok) {
+          const erroTexto = await resposta.text();
+          throw new Error("Erro do servidor: " + erroTexto);
+        }
+
         const dados = await resposta.json();
-        respostaDiv.textContent = dados.resposta;
+        respostaDiv.textContent = dados.resposta || "❌ Resposta vazia.";
       } catch (erro) {
+        console.error("Erro ao consultar o assistente:", erro);
         respostaDiv.textContent = "❌ Erro ao consultar o assistente: " + erro.message;
       }
     }
