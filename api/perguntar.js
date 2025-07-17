@@ -1,29 +1,19 @@
-export const config = {
-  runtime: 'edge',
-};
-
-export default async function handler(req) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ erro: 'Método não permitido' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return res.status(405).json({ erro: 'Método não permitido' });
   }
 
   try {
-    const { pergunta } = await req.json();
+    const { pergunta } = req.body;
 
     if (!pergunta) {
-      return new Response(JSON.stringify({ erro: 'Pergunta não fornecida' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return res.status(400).json({ erro: 'Pergunta não fornecida' });
     }
 
     const resposta = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -34,27 +24,15 @@ export default async function handler(req) {
 
     const dados = await resposta.json();
 
-    console.log('🔴 Resposta bruta da OpenAI:', JSON.stringify(dados));
-
     if (dados.error) {
-      return new Response(JSON.stringify({ erro: dados.error.message }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      console.error('Erro da OpenAI:', dados.error);
+      return res.status(500).json({ erro: dados.error.message });
     }
 
     const respostaTexto = dados.choices?.[0]?.message?.content || 'Sem resposta.';
-
-    return new Response(JSON.stringify({ resposta: respostaTexto }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
-
+    return res.status(200).json({ resposta: respostaTexto });
   } catch (erro) {
-    console.error('🔴 Erro no handler:', erro);
-    return new Response(JSON.stringify({ erro: 'Erro ao processar a pergunta' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    console.error('Erro interno:', erro);
+    return res.status(500).json({ erro: 'Erro interno no servidor' });
   }
 }
