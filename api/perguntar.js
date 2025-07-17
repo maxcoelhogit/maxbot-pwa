@@ -2,11 +2,11 @@
 import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
+  if (req.method !== 'POST') {
     return res.status(405).json({ erro: "Método não permitido" });
   }
 
-  const pergunta = req.body.pergunta;
+  const { pergunta } = req.body;
   const GPT_API_KEY = process.env.GPT_API_KEY;
   const GPT_ASSISTANT_ID = process.env.GPT_ASSISTANT_ID;
 
@@ -46,7 +46,6 @@ export default async function handler(req, res) {
     const runData = await runResp.json();
     const runId = runData.id;
 
-    // Esperar a conclusão do processamento
     let status = "";
     do {
       await new Promise(r => setTimeout(r, 1500));
@@ -56,8 +55,7 @@ export default async function handler(req, res) {
           "OpenAI-Beta": "assistants=v2"
         }
       });
-      const checkData = await check.json();
-      status = checkData.status;
+      status = (await check.json()).status;
     } while (status !== "completed");
 
     const messages = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
