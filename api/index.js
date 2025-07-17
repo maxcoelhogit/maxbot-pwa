@@ -13,7 +13,6 @@ app.post("/perguntar", async (req, res) => {
   const pergunta = req.body.pergunta;
 
   try {
-    // 1. Cria thread
     const threadResp = await fetch("https://api.openai.com/v1/threads", {
       method: "POST",
       headers: {
@@ -25,7 +24,6 @@ app.post("/perguntar", async (req, res) => {
     const threadData = await threadResp.json();
     const threadId = threadData.id;
 
-    // 2. Adiciona mensagem do usuário
     await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
       method: "POST",
       headers: {
@@ -36,7 +34,6 @@ app.post("/perguntar", async (req, res) => {
       body: JSON.stringify({ role: "user", content: pergunta })
     });
 
-    // 3. Inicia execução
     const runResp = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
       method: "POST",
       headers: {
@@ -49,7 +46,6 @@ app.post("/perguntar", async (req, res) => {
     const runData = await runResp.json();
     const runId = runData.id;
 
-    // 4. Espera até terminar
     let status = "";
     do {
       await new Promise(r => setTimeout(r, 1500));
@@ -62,7 +58,6 @@ app.post("/perguntar", async (req, res) => {
       status = (await check.json()).status;
     } while (status !== "completed");
 
-    // 5. Busca resposta
     const messages = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
       headers: {
         "Authorization": `Bearer ${GPT_API_KEY}`,
@@ -79,4 +74,8 @@ app.post("/perguntar", async (req, res) => {
   }
 });
 
+module.exports = app;
+
+// server.js (entrada Vercel)
+const app = require("./api/index");
 module.exports = app;
