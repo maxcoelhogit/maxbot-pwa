@@ -3,115 +3,102 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MaxBot - Assistente Virtual</title>
+  <title>MaxBot</title>
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#004488" />
-  <link rel="icon" href="icon-192.png" />
   <style>
     :root {
       --azul: #004488;
       --azul-claro: #eef2ff;
-      --fundo: #f9f9f9;
-      --texto: #222;
     }
-    * {
-      box-sizing: border-box;
-    }
-    html, body {
+    body {
       margin: 0;
-      padding: 0;
+      padding: 1rem;
       font-family: system-ui, sans-serif;
-      background: var(--fundo);
-      color: var(--texto);
-      height: 100%;
-      width: 100%;
+      background-color: #f9f9f9;
     }
     .container {
       max-width: 480px;
       margin: auto;
-      padding: 1rem;
-    }
-    .card {
-      background-color: white;
+      background: white;
+      padding: 2rem;
       border-radius: 1rem;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
-      padding: 1.5rem;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
     h1 {
       text-align: center;
       color: var(--azul);
-      margin-bottom: 1rem;
     }
     label {
-      display: block;
       font-weight: bold;
       margin-bottom: 0.5rem;
+      display: block;
     }
     textarea {
       width: 100%;
       padding: 0.75rem;
-      border-radius: 0.5rem;
-      border: 1px solid #ccc;
       font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 0.5rem;
       resize: vertical;
     }
     button {
       width: 100%;
-      margin-top: 1rem;
       padding: 0.75rem;
+      font-size: 1rem;
       border: none;
       border-radius: 0.5rem;
-      background: var(--azul);
+      background-color: var(--azul);
       color: white;
-      font-size: 1rem;
+      margin-top: 1rem;
+      cursor: pointer;
     }
-    button:hover {
-      background: #0066aa;
-    }
-    .resposta {
+    #resposta {
       margin-top: 1.5rem;
-      background: var(--azul-claro);
-      border-left: 4px solid var(--azul);
       padding: 1rem;
+      background-color: var(--azul-claro);
+      border-left: 4px solid var(--azul);
       border-radius: 0.5rem;
+      font-size: 1rem;
       white-space: pre-wrap;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="card">
-      <h1>MaxBot</h1>
-      <label for="pergunta">Como posso ajudar?</label>
-      <textarea id="pergunta" rows="4" placeholder="Digite sua pergunta..."></textarea>
-      <button onclick="responder()">Enviar</button>
-      <div id="resposta" class="resposta"></div>
-    </div>
+    <h1>MaxBot</h1>
+    <label for="pergunta">Como posso ajudar?</label>
+    <textarea id="pergunta" rows="4" placeholder="Digite sua pergunta..."></textarea>
+    <button onclick="enviarPergunta()">Enviar</button>
+    <div id="resposta"></div>
   </div>
 
   <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js');
-    }
+    async function enviarPergunta() {
+      const pergunta = document.getElementById("pergunta").value;
+      const respostaDiv = document.getElementById("resposta");
 
-    function responder() {
-      const pergunta = document.getElementById('pergunta').value.trim();
-      const respostaBox = document.getElementById('resposta');
-      if (!pergunta) {
-        respostaBox.textContent = 'Digite uma pergunta!';
+      if (!pergunta.trim()) {
+        respostaDiv.textContent = "Por favor, escreva uma pergunta.";
         return;
       }
-      respostaBox.textContent = '⏳ Processando sua pergunta...';
 
-      // Exemplo de chamada à API (você pode adaptar depois)
-      fetch('https://script.google.com/macros/s/AKfycbzBKuzKzZ0-CesN75GY-4NbuKYI4sBBbZsiCpfWK6RR4AQdZR_5X9me0oDcoICfb3OF/exec', {
-        method: 'POST',
-        body: JSON.stringify({ pergunta }),
-        headers: { 'Content-Type': 'application/json' }
-      })
-        .then(r => r.json())
-        .then(data => respostaBox.textContent = data.resposta || '❌ Nenhuma resposta.')
-        .catch(err => respostaBox.textContent = '❌ Erro: ' + err.message);
+      respostaDiv.textContent = "⏳ Processando sua pergunta...";
+
+      try {
+        const resposta = await fetch("https://script.google.com/macros/s/AKfycbwZclYFmHBEUlavVXuLrLM8bWtX1EoR2wiHSbyKKNWtChIZb_DEkxLajTQBAMO74jXk/exec", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ pergunta })
+        });
+
+        const dados = await resposta.json();
+        respostaDiv.textContent = dados.resposta;
+      } catch (erro) {
+        respostaDiv.textContent = "❌ Erro ao consultar o assistente: " + erro.message;
+      }
     }
   </script>
 </body>
