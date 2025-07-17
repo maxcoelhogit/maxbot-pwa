@@ -83,10 +83,10 @@
         return;
       }
 
-      respostaDiv.textContent = "⏳ Processando sua pergunta...";
+      respostaDiv.innerHTML = "<em>⏳ Processando sua pergunta...</em>";
 
       try {
-        const resposta = await fetch("/api/perguntar", {
+        const resposta = await fetch("https://maxbot-pwa.vercel.app/api/perguntar", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
