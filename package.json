@@ -1,5 +1,10 @@
 {
+  "name": "maxbot-pwa",
+  "version": "1.0.0",
   "type": "module",
+  "scripts": {
+    "build": "echo build step"
+  },
   "dependencies": {
     "node-fetch": "^3.4.0"
   }
