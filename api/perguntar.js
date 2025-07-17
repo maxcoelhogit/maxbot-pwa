@@ -1,5 +1,3 @@
-import fetch from 'node-fetch';
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ erro: 'Método não permitido' });
@@ -7,44 +5,76 @@ export default async function handler(req, res) {
 
   const { pergunta } = req.body;
 
-  if (!pergunta) {
-    return res.status(400).json({ erro: 'Pergunta não fornecida' });
+  if (!pergunta || pergunta.trim() === '') {
+    return res.status(400).json({ erro: 'Pergunta inválida' });
   }
 
   try {
-    console.log("📩 Pergunta recebida:", pergunta);
-
-    const resposta = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
+    const resposta = await fetch('https://api.openai.com/v1/threads/runs', {
+      method: 'POST',
       headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
-        "OpenAI-Beta": "assistants=v2"
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer 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',
+        'OpenAI-Beta': 'assistants=v2'
       },
       body: JSON.stringify({
-        model: "gpt-4o",
-        assistant_id: "asst_dk7R5Q7jPZSSB1imMz2NtfTY",
-        messages: [
-          { role: "user", content: pergunta }
-        ]
+        assistant_id: 'asst_dk7R5Q7jPZSSB1imMz2NtfTY',
+        thread: {
+          messages: [
+            {
+              role: 'user',
+              content: pergunta
+            }
+          ]
+        }
       })
     });
 
-    const data = await resposta.json();
-    console.log("📤 Resposta bruta da OpenAI:", JSON.stringify(data));
+    const dados = await resposta.json();
 
     if (!resposta.ok) {
-      return res.status(500).json({
-        erro: "Erro na OpenAI",
-        detalhes: data.error?.message || data
-      });
+      console.error('Erro da OpenAI:', dados);
+      return res.status(500).json({ erro: 'Erro na OpenAI', detalhes: dados });
     }
 
-    const conteudo = data.choices?.[0]?.message?.content || "Sem resposta.";
-    return res.status(200).json({ resposta: conteudo });
+    const runId = dados.id;
+    const threadId = dados.thread_id;
 
-  } catch (err) {
-    console.error("❌ Erro de execução:", err);
-    return res.status(500).json({ erro: "Erro interno", detalhes: err.message });
+    // Aguarda o processamento do run (pode levar alguns segundos)
+    let finalizado = false;
+    let resultado = null;
+
+    while (!finalizado) {
+      await new Promise(r => setTimeout(r, 2000));
+
+      const statusRes = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${runId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': 'Bearer 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',
+          'OpenAI-Beta': 'assistants=v2'
+        }
+      });
+
+      const statusJson = await statusRes.json();
+      if (statusJson.status === 'completed') {
+        finalizado = true;
+
+        const mensagensRes = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer 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',
+            'OpenAI-Beta': 'assistants=v2'
+          }
+        });
+
+        const mensagensJson = await mensagensRes.json();
+        resultado = mensagensJson.data[0]?.content[0]?.text?.value || 'Sem resposta';
+      }
+    }
+
+    return res.status(200).json({ resposta: resultado });
+  } catch (erro) {
+    console.error('Erro geral:', erro);
+    return res.status(500).json({ erro: 'Erro interno no servidor' });
   }
 }
