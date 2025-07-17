@@ -86,7 +86,7 @@
       respostaDiv.textContent = "⏳ Processando sua pergunta...";
 
       try {
-        const resposta = await fetch("https://script.google.com/macros/s/AKfycbwZclYFmHBEUlavVXuLrLM8bWtX1EoR2wiHSbyKKNWtChIZb_DEkxLajTQBAMO74jXk/exec", {
+        const resposta = await fetch("https://maxbot-pwa.vercel.app/api/perguntar", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
