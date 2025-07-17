@@ -1,12 +1,12 @@
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+// api/perguntar.js
+import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ erro: "Método não permitido" });
   }
 
-  const { pergunta } = req.body;
-
+  const pergunta = req.body.pergunta;
   const GPT_API_KEY = process.env.GPT_API_KEY;
   const GPT_ASSISTANT_ID = process.env.GPT_ASSISTANT_ID;
 
@@ -19,10 +19,9 @@ export default async function handler(req, res) {
         "OpenAI-Beta": "assistants=v2"
       }
     });
+
     const threadData = await threadResp.json();
     const threadId = threadData.id;
-
-    console.log("Thread ID:", threadId);
 
     await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
       method: "POST",
@@ -43,15 +42,13 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({ assistant_id: GPT_ASSISTANT_ID })
     });
+
     const runData = await runResp.json();
     const runId = runData.id;
 
-    console.log("Run ID:", runId);
-
+    // Esperar a conclusão do processamento
     let status = "";
-    let tentativa = 0;
     do {
-      tentativa++;
       await new Promise(r => setTimeout(r, 1500));
       const check = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${runId}`, {
         headers: {
@@ -59,9 +56,9 @@ export default async function handler(req, res) {
           "OpenAI-Beta": "assistants=v2"
         }
       });
-      status = (await check.json()).status;
-      console.log(`Tentativa ${tentativa}: status = ${status}`);
-    } while (status !== "completed" && tentativa < 10);
+      const checkData = await check.json();
+      status = checkData.status;
+    } while (status !== "completed");
 
     const messages = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
       headers: {
@@ -69,12 +66,9 @@ export default async function handler(req, res) {
         "OpenAI-Beta": "assistants=v2"
       }
     });
+
     const mensagens = await messages.json();
-
-    console.log("Mensagens:", JSON.stringify(mensagens, null, 2));
-
-    const respostaObj = mensagens.data.find(m => m.role === "assistant");
-    const resposta = respostaObj?.content?.[0]?.text?.value || respostaObj?.content?.[0]?.text || "❌ Sem resposta.";
+    const resposta = mensagens.data.find(m => m.role === "assistant")?.content[0]?.text?.value || "❌ Sem resposta.";
 
     res.status(200).json({ resposta });
   } catch (e) {
