@@ -1,5 +1,4 @@
-// api/perguntar.js
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -20,7 +19,10 @@ export default async function handler(req, res) {
         "OpenAI-Beta": "assistants=v2"
       }
     });
-    const threadId = (await threadResp.json()).id;
+    const threadData = await threadResp.json();
+    const threadId = threadData.id;
+
+    console.log("Thread ID:", threadId);
 
     await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
       method: "POST",
@@ -41,10 +43,15 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({ assistant_id: GPT_ASSISTANT_ID })
     });
-    const runId = (await runResp.json()).id;
+    const runData = await runResp.json();
+    const runId = runData.id;
+
+    console.log("Run ID:", runId);
 
     let status = "";
+    let tentativa = 0;
     do {
+      tentativa++;
       await new Promise(r => setTimeout(r, 1500));
       const check = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${runId}`, {
         headers: {
@@ -53,7 +60,8 @@ export default async function handler(req, res) {
         }
       });
       status = (await check.json()).status;
-    } while (status !== "completed");
+      console.log(`Tentativa ${tentativa}: status = ${status}`);
+    } while (status !== "completed" && tentativa < 10);
 
     const messages = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
       headers: {
@@ -62,7 +70,11 @@ export default async function handler(req, res) {
       }
     });
     const mensagens = await messages.json();
-    const resposta = mensagens.data.find(m => m.role === "assistant")?.content[0]?.text?.value || "❌ Sem resposta.";
+
+    console.log("Mensagens:", JSON.stringify(mensagens, null, 2));
+
+    const respostaObj = mensagens.data.find(m => m.role === "assistant");
+    const resposta = respostaObj?.content?.[0]?.text?.value || respostaObj?.content?.[0]?.text || "❌ Sem resposta.";
 
     res.status(200).json({ resposta });
   } catch (e) {
