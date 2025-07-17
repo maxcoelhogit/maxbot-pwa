@@ -1,1 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MaxBot</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#004488" />
+  <style>
+    :root {
+      --azul: #004488;
+      --azul-claro: #eef2ff;
+    }
+    body {
+      margin: 0;
+      padding: 1rem;
+      font-family: system-ui, sans-serif;
+      background-color: #f9f9f9;
+    }
+    .container {
+      max-width: 480px;
+      margin: auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: var(--azul);
+    }
+    label {
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+    textarea {
+      width: 100%;
+      padding: 0.75rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 0.5rem;
+      resize: vertical;
+    }
+    button {
+      width: 100%;
+      padding: 0.75rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 0.5rem;
+      background-color: var(--azul);
+      color: white;
+      margin-top: 1rem;
+      cursor: pointer;
+    }
+    #resposta {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background-color: var(--azul-claro);
+      border-left: 4px solid var(--azul);
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>MaxBot</h1>
+    <label for="pergunta">Como posso ajudar?</label>
+    <textarea id="pergunta" rows="4" placeholder="Digite sua pergunta..."></textarea>
+    <button onclick="enviarPergunta()">Enviar</button>
+    <div id="resposta"></div>
+  </div>
 
+  <script>
+    async function enviarPergunta() {
+      const pergunta = document.getElementById("pergunta").value.trim();
+      const respostaDiv = document.getElementById("resposta");
+
+      if (!pergunta) {
+        respostaDiv.textContent = "Por favor, escreva uma pergunta.";
+        return;
+      }
+
+      respostaDiv.innerHTML = "<em>⏳ Processando sua pergunta...</em>";
+
+      try {
+        const resposta = await fetch("https://maxbot-pwa.vercel.app/api/perguntar", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ pergunta })
+        });
+
+        if (!resposta.ok) {
+          const erroTexto = await resposta.text();
+          throw new Error("Erro do servidor: " + erroTexto);
+        }
+
+        const dados = await resposta.json();
+        respostaDiv.textContent = dados.resposta || "❌ Resposta vazia.";
+      } catch (erro) {
+        console.error("Erro ao consultar o assistente:", erro);
+        respostaDiv.textContent = "❌ Erro ao consultar o assistente: " + erro.message;
+      }
+    }
+  </script>
+</body>
+</html>
