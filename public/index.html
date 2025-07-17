@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>MaxBot</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f2f2f2;
+      padding: 2rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .box {
+      background: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    textarea, button {
+      width: 100%;
+      font-size: 16px;
+      margin-top: 1rem;
+    }
+
+    button {
+      padding: 1rem;
+      background: #004488;
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+    }
+
+    #resposta {
+      background: #eef2ff;
+      padding: 1rem;
+      margin-top: 1rem;
+      border-radius: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>MaxBot</h1>
+    <textarea id="pergunta" rows="4" placeholder="Digite sua pergunta..."></textarea>
+    <button onclick="enviarPergunta()">Enviar</button>
+    <div id="resposta"></div>
+  </div>
+
+  <script>
+    async function enviarPergunta() {
+      const pergunta = document.getElementById("pergunta").value;
+      const respostaDiv = document.getElementById("resposta");
+      respostaDiv.textContent = "⌛ Enviando...";
+
+      try {
+        const res = await fetch("/api/perguntar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pergunta })
+        });
+        const data = await res.json();
+        respostaDiv.textContent = data.resposta || data.erro || "Sem resposta.";
+      } catch (err) {
+        respostaDiv.textContent = "Erro: " + err.message;
+      }
+    }
+  </script>
+</body>
+</html>

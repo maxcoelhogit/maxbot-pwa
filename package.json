@@ -1,0 +1,11 @@
+{
+  "name": "maxbot-clean",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "echo 'build passo não necessário'"
+  },
+  "dependencies": {
+    "node-fetch": "^3.4.0"
+  }
+}
